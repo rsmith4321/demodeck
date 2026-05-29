@@ -3,7 +3,7 @@ Contributors: rsmith4321
 Tags: demo previewer, website demos, iframe preview, portfolio, showcase
 Requires at least: 5.0
 Tested up to: 6.9
-Stable tag: 2.1
+Stable tag: 2.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -58,6 +58,14 @@ Because your demo pages load your actual live websites inside an iframe, allowin
 4. Simple drag-and-drop admin sorting.
 
 == Changelog ==
+
+= 2.2.0 =
+* **Security:** The drag-and-drop reorder action now verifies that each submitted ID is a Demo Site the current user is allowed to edit, so it can never affect other content types.
+* **Fix:** Permalinks for demo sites and categories now work immediately on activation (rewrite rules are flushed), instead of needing a manual re-save under Settings > Permalinks.
+* **Hardening:** Added a capability check when saving the category "Display Order" field.
+* **Accessibility:** Added screen-reader labels to the previewer's device-view buttons, the demo selector, and the close button.
+* **Housekeeping:** Plugin options are now removed on uninstall (your Demo Sites, thumbnails, and pages are kept).
+* **Internal:** Renamed internal function and option prefixes for cleaner namespacing. Existing settings and demo URLs are migrated automatically on update.
 
 = 2.1.0 =
 * **Major Feature:** Introduced a Custom Taxonomy (Categories) to easily organize and separate different types of demo sites (e.g., Real Sites vs. Templates).

@@ -3,7 +3,7 @@
  * Plugin Name: DemoDeck
  * Plugin URI: https://github.com/rsmith4321/demodeck
  * Description: Automatically generates a beautiful, full-screen, responsive iframe previewer and a central hub page to show off your website themes. Includes drag-and-drop ordering.
- * Version: 2.1
+ * Version: 2.2.0
  * Author: Shoreline Web Designs
  * Author URI: https://shorelinewebdesigns.com/
  * Text Domain: demodeck
@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 // -----------------------------------------------------------------------------
 // 1. REUSABLE FUNCTION TO CREATE THE HUB PAGE
 // -----------------------------------------------------------------------------
-function sdp_create_hub_page() {
+function demodeck_create_hub_page() {
 	$page_title = 'Example Sites';
 	
 	$query = new WP_Query( array(
@@ -46,16 +46,70 @@ function sdp_create_hub_page() {
 // -----------------------------------------------------------------------------
 // 2. ACTIVATION HOOK
 // -----------------------------------------------------------------------------
-register_activation_hook( __FILE__, 'sdp_plugin_activation' );
-function sdp_plugin_activation() {
-	sdp_create_hub_page();
+register_activation_hook( __FILE__, 'demodeck_plugin_activation' );
+function demodeck_plugin_activation() {
+	// Register the post type + taxonomy so their rewrite rules exist, then
+	// flush. Without this the /examples/ and category permalinks 404 until the
+	// admin manually re-saves Settings > Permalinks.
+	demodeck_register_cpt();
+	demodeck_register_taxonomy();
+	flush_rewrite_rules();
+	demodeck_create_hub_page();
+}
+
+register_deactivation_hook( __FILE__, 'demodeck_plugin_deactivation' );
+function demodeck_plugin_deactivation() {
+	// Drop the custom rewrite rules we added so they don't linger after the
+	// post type stops being registered.
+	flush_rewrite_rules();
+}
+
+// -----------------------------------------------------------------------------
+// 2.5 ONE-TIME MIGRATION FROM THE PRE-2.2 "sdp_" PREFIX
+// -----------------------------------------------------------------------------
+// Older versions stored settings and the per-site demo URL under an "sdp_"
+// prefix. Move that data onto the new "demodeck_" keys once, so upgrading sites
+// keep their colors and demo URLs. Harmless no-op on fresh installs.
+add_action( 'plugins_loaded', 'demodeck_maybe_migrate_legacy_data' );
+function demodeck_maybe_migrate_legacy_data() {
+	if ( get_option( 'demodeck_data_migrated' ) ) {
+		return;
+	}
+
+	$option_map = array(
+		'sdp_disable_seo' => 'demodeck_disable_seo',
+		'sdp_topbar_bg'   => 'demodeck_topbar_bg',
+		'sdp_topbar_text' => 'demodeck_topbar_text',
+		'sdp_button_bg'   => 'demodeck_button_bg',
+		'sdp_button_text' => 'demodeck_button_text',
+	);
+	foreach ( $option_map as $old_key => $new_key ) {
+		$existing = get_option( $old_key, null );
+		if ( null !== $existing && false === get_option( $new_key, false ) ) {
+			update_option( $new_key, $existing );
+		}
+		delete_option( $old_key );
+	}
+
+	// Rename the demo URL meta key on every Demo Site in a single query.
+	global $wpdb;
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+	$wpdb->query(
+		$wpdb->prepare(
+			"UPDATE {$wpdb->postmeta} SET meta_key = %s WHERE meta_key = %s",
+			'_demodeck_demo_url',
+			'_sdp_demo_url'
+		)
+	);
+
+	update_option( 'demodeck_data_migrated', 1 );
 }
 
 // -----------------------------------------------------------------------------
 // 3. REGISTER THE "DEMO SITES" CUSTOM POST TYPE
 // -----------------------------------------------------------------------------
-add_action( 'init', 'sdp_register_cpt' );
-function sdp_register_cpt() {
+add_action( 'init', 'demodeck_register_cpt' );
+function demodeck_register_cpt() {
 	register_post_type( 'demo_site', array(
 		'labels' => array(
 			'name'                  => __( 'Demo Sites', 'demodeck' ),
@@ -78,8 +132,8 @@ function sdp_register_cpt() {
 // -----------------------------------------------------------------------------
 // 3.5 REGISTER DEMO CATEGORIES (TAXONOMY)
 // -----------------------------------------------------------------------------
-add_action( 'init', 'sdp_register_taxonomy' );
-function sdp_register_taxonomy() {
+add_action( 'init', 'demodeck_register_taxonomy' );
+function demodeck_register_taxonomy() {
 	register_taxonomy( 'demo_type', array( 'demo_site' ), array(
 		'labels' => array(
 			'name'              => __( 'Categories', 'demodeck' ),
@@ -98,8 +152,8 @@ function sdp_register_taxonomy() {
 // -----------------------------------------------------------------------------
 
 // 1. Add field to "Add New Category" screen
-add_action( 'demo_type_add_form_fields', 'sdp_add_category_order_field' );
-function sdp_add_category_order_field() {
+add_action( 'demo_type_add_form_fields', 'demodeck_add_category_order_field' );
+function demodeck_add_category_order_field() {
 	?>
 	<div class="form-field">
 		<label for="term_order"><?php esc_html_e( 'Display Order', 'demodeck' ); ?></label>
@@ -110,8 +164,8 @@ function sdp_add_category_order_field() {
 }
 
 // 2. Add field to "Edit Category" screen
-add_action( 'demo_type_edit_form_fields', 'sdp_edit_category_order_field' );
-function sdp_edit_category_order_field( $term ) {
+add_action( 'demo_type_edit_form_fields', 'demodeck_edit_category_order_field' );
+function demodeck_edit_category_order_field( $term ) {
 	$order = get_term_meta( $term->term_id, 'term_order', true );
 	if ( $order === '' ) { $order = 0; }
 	?>
@@ -126,25 +180,31 @@ function sdp_edit_category_order_field( $term ) {
 }
 
 // 3. Save the custom field data
-add_action( 'saved_demo_type', 'sdp_save_category_order' );
-add_action( 'created_demo_type', 'sdp_save_category_order' );
-function sdp_save_category_order( $term_id ) {
+add_action( 'saved_demo_type', 'demodeck_save_category_order' );
+add_action( 'created_demo_type', 'demodeck_save_category_order' );
+function demodeck_save_category_order( $term_id ) {
+	// Core's term-edit form verifies its own nonce before these hooks fire; we
+	// add a capability check so the order can only be set by users allowed to
+	// manage this taxonomy.
+	if ( ! current_user_can( 'manage_categories' ) ) {
+		return;
+	}
 	// phpcs:ignore WordPress.Security.NonceVerification.Missing
 	if ( isset( $_POST['term_order'] ) ) {
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing
-		update_term_meta( $term_id, 'term_order', absint( $_POST['term_order'] ) );
+		update_term_meta( $term_id, 'term_order', absint( wp_unslash( $_POST['term_order'] ) ) );
 	}
 }
 
 // 4. Add "Order" column to the Categories list table
-add_filter( 'manage_edit-demo_type_columns', 'sdp_add_category_order_column' );
-function sdp_add_category_order_column( $columns ) {
+add_filter( 'manage_edit-demo_type_columns', 'demodeck_add_category_order_column' );
+function demodeck_add_category_order_column( $columns ) {
 	$columns['term_order'] = __( 'Order', 'demodeck' );
 	return $columns;
 }
 
-add_filter( 'manage_demo_type_custom_column', 'sdp_fill_category_order_column', 10, 3 );
-function sdp_fill_category_order_column( $content, $column_name, $term_id ) {
+add_filter( 'manage_demo_type_custom_column', 'demodeck_fill_category_order_column', 10, 3 );
+function demodeck_fill_category_order_column( $content, $column_name, $term_id ) {
 	if ( $column_name === 'term_order' ) {
 		$order = get_term_meta( $term_id, 'term_order', true );
 		$content = ( $order !== '' ) ? esc_html( $order ) : '0';
@@ -155,27 +215,27 @@ function sdp_fill_category_order_column( $content, $column_name, $term_id ) {
 // -----------------------------------------------------------------------------
 // 4. CREATE THE ADMIN SUBMENU
 // -----------------------------------------------------------------------------
-add_action( 'admin_menu', 'sdp_add_admin_menu' );
-function sdp_add_admin_menu() {
+add_action( 'admin_menu', 'demodeck_add_admin_menu' );
+function demodeck_add_admin_menu() {
 	add_submenu_page(
 		'edit.php?post_type=demo_site',
 		__( 'Getting Started', 'demodeck' ),
 		__( 'Getting Started', 'demodeck' ),
 		'manage_options',
 		'sdp-hub-setup',
-		'sdp_hub_setup_page_html'
+		'demodeck_hub_setup_page_html'
 	);
 }
 
 // -----------------------------------------------------------------------------
 // 5. ADMIN SETTINGS & INSTRUCTIONS PAGE HTML
 // -----------------------------------------------------------------------------
-function sdp_hub_setup_page_html() {
+function demodeck_hub_setup_page_html() {
 	if ( ! current_user_can( 'manage_options' ) ) return;
 	
 	// Handle Hub Generation
-	if ( isset( $_POST['sdp_generate_hub'] ) && check_admin_referer( 'sdp_generate_hub_action', 'sdp_generate_hub_nonce' ) ) {
-		$result = sdp_create_hub_page();
+	if ( isset( $_POST['demodeck_generate_hub'] ) && check_admin_referer( 'demodeck_generate_hub_action', 'demodeck_generate_hub_nonce' ) ) {
+		$result = demodeck_create_hub_page();
 		if ( $result ) {
 			echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Success! The "Example Sites" hub page has been generated.', 'demodeck' ) . ' <a href="' . esc_url( get_edit_post_link( $result ) ) . '">' . esc_html__( 'View Page', 'demodeck' ) . '</a></p></div>';
 		} else {
@@ -184,14 +244,14 @@ function sdp_hub_setup_page_html() {
 	}
 
 	// Handle Plugin Settings Save
-	if ( isset( $_POST['sdp_save_settings'] ) && check_admin_referer( 'sdp_save_settings_action', 'sdp_save_settings_nonce' ) ) {
-		$disable_seo = isset( $_POST['sdp_disable_seo'] ) ? 'yes' : 'no';
-		update_option( 'sdp_disable_seo', $disable_seo );
+	if ( isset( $_POST['demodeck_save_settings'] ) && check_admin_referer( 'demodeck_save_settings_action', 'demodeck_save_settings_nonce' ) ) {
+		$disable_seo = isset( $_POST['demodeck_disable_seo'] ) ? 'yes' : 'no';
+		update_option( 'demodeck_disable_seo', $disable_seo );
 		
-		if ( isset( $_POST['sdp_topbar_bg'] ) ) update_option( 'sdp_topbar_bg', sanitize_hex_color( wp_unslash( $_POST['sdp_topbar_bg'] ) ) );
-		if ( isset( $_POST['sdp_topbar_text'] ) ) update_option( 'sdp_topbar_text', sanitize_hex_color( wp_unslash( $_POST['sdp_topbar_text'] ) ) );
-		if ( isset( $_POST['sdp_button_bg'] ) ) update_option( 'sdp_button_bg', sanitize_hex_color( wp_unslash( $_POST['sdp_button_bg'] ) ) );
-		if ( isset( $_POST['sdp_button_text'] ) ) update_option( 'sdp_button_text', sanitize_hex_color( wp_unslash( $_POST['sdp_button_text'] ) ) );
+		if ( isset( $_POST['demodeck_topbar_bg'] ) ) update_option( 'demodeck_topbar_bg', sanitize_hex_color( wp_unslash( $_POST['demodeck_topbar_bg'] ) ) );
+		if ( isset( $_POST['demodeck_topbar_text'] ) ) update_option( 'demodeck_topbar_text', sanitize_hex_color( wp_unslash( $_POST['demodeck_topbar_text'] ) ) );
+		if ( isset( $_POST['demodeck_button_bg'] ) ) update_option( 'demodeck_button_bg', sanitize_hex_color( wp_unslash( $_POST['demodeck_button_bg'] ) ) );
+		if ( isset( $_POST['demodeck_button_text'] ) ) update_option( 'demodeck_button_text', sanitize_hex_color( wp_unslash( $_POST['demodeck_button_text'] ) ) );
 		
 		echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Settings saved successfully!', 'demodeck' ) . '</p></div>';
 	}
@@ -262,12 +322,12 @@ function sdp_hub_setup_page_html() {
 						<h2 class="hndle" style="padding: 15px;"><span><?php esc_html_e( '⚙️ Plugin Settings', 'demodeck' ); ?></span></h2>
 						<div class="inside" style="padding: 0 15px 15px;">
 							<form method="post" action="">
-								<?php wp_nonce_field( 'sdp_save_settings_action', 'sdp_save_settings_nonce' ); ?>
-								<input type="hidden" name="sdp_save_settings" value="1">
+								<?php wp_nonce_field( 'demodeck_save_settings_action', 'demodeck_save_settings_nonce' ); ?>
+								<input type="hidden" name="demodeck_save_settings" value="1">
 								
 								<p style="margin-top:0;"><strong><?php esc_html_e( 'SEO Preferences', 'demodeck' ); ?></strong></p>
 								<label style="display: block; margin-bottom: 20px;">
-									<input type="checkbox" name="sdp_disable_seo" value="yes" <?php checked( get_option( 'sdp_disable_seo', 'yes' ), 'yes' ); ?> />
+									<input type="checkbox" name="demodeck_disable_seo" value="yes" <?php checked( get_option( 'demodeck_disable_seo', 'yes' ), 'yes' ); ?> />
 									<?php esc_html_e( 'Disable SEO plugins and No Index Demo Pages', 'demodeck' ); ?>
 								</label>
 
@@ -275,22 +335,22 @@ function sdp_hub_setup_page_html() {
 								
 								<p style="margin-top:0;"><strong><?php esc_html_e( 'Previewer Top Bar', 'demodeck' ); ?></strong></p>
 								<div style="display: flex; align-items: center; margin-bottom: 10px;">
-									<input type="color" id="sdp_topbar_bg" name="sdp_topbar_bg" value="<?php echo esc_attr( get_option( 'sdp_topbar_bg', '#ffffff' ) ); ?>" style="margin-right: 10px;" />
-									<label for="sdp_topbar_bg"><?php esc_html_e( 'Background Color', 'demodeck' ); ?></label>
+									<input type="color" id="demodeck_topbar_bg" name="demodeck_topbar_bg" value="<?php echo esc_attr( get_option( 'demodeck_topbar_bg', '#ffffff' ) ); ?>" style="margin-right: 10px;" />
+									<label for="demodeck_topbar_bg"><?php esc_html_e( 'Background Color', 'demodeck' ); ?></label>
 								</div>
 								<div style="display: flex; align-items: center; margin-bottom: 20px;">
-									<input type="color" id="sdp_topbar_text" name="sdp_topbar_text" value="<?php echo esc_attr( get_option( 'sdp_topbar_text', '#333333' ) ); ?>" style="margin-right: 10px;" />
-									<label for="sdp_topbar_text"><?php esc_html_e( 'Icon & Text Color', 'demodeck' ); ?></label>
+									<input type="color" id="demodeck_topbar_text" name="demodeck_topbar_text" value="<?php echo esc_attr( get_option( 'demodeck_topbar_text', '#333333' ) ); ?>" style="margin-right: 10px;" />
+									<label for="demodeck_topbar_text"><?php esc_html_e( 'Icon & Text Color', 'demodeck' ); ?></label>
 								</div>
 
 								<p><strong><?php esc_html_e( 'Grid Buttons', 'demodeck' ); ?></strong></p>
 								<div style="display: flex; align-items: center; margin-bottom: 10px;">
-									<input type="color" id="sdp_button_bg" name="sdp_button_bg" value="<?php echo esc_attr( get_option( 'sdp_button_bg', '#2563eb' ) ); ?>" style="margin-right: 10px;" />
-									<label for="sdp_button_bg"><?php esc_html_e( 'Button Color', 'demodeck' ); ?></label>
+									<input type="color" id="demodeck_button_bg" name="demodeck_button_bg" value="<?php echo esc_attr( get_option( 'demodeck_button_bg', '#2563eb' ) ); ?>" style="margin-right: 10px;" />
+									<label for="demodeck_button_bg"><?php esc_html_e( 'Button Color', 'demodeck' ); ?></label>
 								</div>
 								<div style="display: flex; align-items: center; margin-bottom: 20px;">
-									<input type="color" id="sdp_button_text" name="sdp_button_text" value="<?php echo esc_attr( get_option( 'sdp_button_text', '#ffffff' ) ); ?>" style="margin-right: 10px;" />
-									<label for="sdp_button_text"><?php esc_html_e( 'Button Text', 'demodeck' ); ?></label>
+									<input type="color" id="demodeck_button_text" name="demodeck_button_text" value="<?php echo esc_attr( get_option( 'demodeck_button_text', '#ffffff' ) ); ?>" style="margin-right: 10px;" />
+									<label for="demodeck_button_text"><?php esc_html_e( 'Button Text', 'demodeck' ); ?></label>
 								</div>
 
 								<?php submit_button( __( 'Save Settings', 'demodeck' ), 'primary', 'submit', false ); ?>
@@ -303,8 +363,8 @@ function sdp_hub_setup_page_html() {
 						<div class="inside" style="padding: 0 15px 15px;">
 							<p><?php esc_html_e( 'Did you accidentally delete your "Example Sites" directory page? Click the button below to instantly regenerate it with the correct shortcode.', 'demodeck' ); ?></p>
 							<form method="post" action="">
-								<?php wp_nonce_field( 'sdp_generate_hub_action', 'sdp_generate_hub_nonce' ); ?>
-								<input type="hidden" name="sdp_generate_hub" value="1">
+								<?php wp_nonce_field( 'demodeck_generate_hub_action', 'demodeck_generate_hub_nonce' ); ?>
+								<input type="hidden" name="demodeck_generate_hub" value="1">
 								<?php submit_button( __( 'Generate "Example Sites" Page', 'demodeck' ), 'secondary' ); ?>
 							</form>
 						</div>
@@ -332,8 +392,8 @@ function sdp_hub_setup_page_html() {
 // -----------------------------------------------------------------------------
 // 6. RE-POSITION THE THUMBNAIL (FEATURED IMAGE) META BOX
 // -----------------------------------------------------------------------------
-add_action( 'do_meta_boxes', 'sdp_move_thumbnail_meta_box' );
-function sdp_move_thumbnail_meta_box() {
+add_action( 'do_meta_boxes', 'demodeck_move_thumbnail_meta_box' );
+function demodeck_move_thumbnail_meta_box() {
 	// Remove it from the right sidebar
 	remove_meta_box( 'postimagediv', 'demo_site', 'side' );
 	// Add it to the main content area (normal) below the URL settings
@@ -343,18 +403,18 @@ function sdp_move_thumbnail_meta_box() {
 // -----------------------------------------------------------------------------
 // 7. CREATE THE CUSTOM FIELD (META BOX) FOR THE URL
 // -----------------------------------------------------------------------------
-add_action( 'add_meta_boxes', 'sdp_add_meta_box' );
-function sdp_add_meta_box() {
-	add_meta_box( 'sdp_url_meta', __( 'Demo Site Settings', 'demodeck' ), 'sdp_meta_box_html', 'demo_site', 'normal', 'high' );
+add_action( 'add_meta_boxes', 'demodeck_add_meta_box' );
+function demodeck_add_meta_box() {
+	add_meta_box( 'demodeck_url_meta', __( 'Demo Site Settings', 'demodeck' ), 'demodeck_meta_box_html', 'demo_site', 'normal', 'high' );
 }
 
-function sdp_meta_box_html( $post ) {
-	$url = get_post_meta( $post->ID, '_sdp_demo_url', true );
-	wp_nonce_field( 'sdp_save_meta', 'sdp_meta_nonce' );
+function demodeck_meta_box_html( $post ) {
+	$url = get_post_meta( $post->ID, '_demodeck_demo_url', true );
+	wp_nonce_field( 'demodeck_save_meta', 'demodeck_meta_nonce' );
 	?>
 	<p>
-		<label for="sdp_demo_url"><strong><?php esc_html_e( 'Demo Website URL:', 'demodeck' ); ?></strong></label><br>
-		<input type="url" id="sdp_demo_url" name="sdp_demo_url" value="<?php echo esc_url( $url ); ?>" style="width:100%; max-width: 600px; margin-top:5px;" placeholder="https://example.com/my-demo" required />
+		<label for="demodeck_demo_url"><strong><?php esc_html_e( 'Demo Website URL:', 'demodeck' ); ?></strong></label><br>
+		<input type="url" id="demodeck_demo_url" name="demodeck_demo_url" value="<?php echo esc_url( $url ); ?>" style="width:100%; max-width: 600px; margin-top:5px;" placeholder="https://example.com/my-demo" required />
 	</p>
 	<?php
 }
@@ -362,35 +422,35 @@ function sdp_meta_box_html( $post ) {
 // -----------------------------------------------------------------------------
 // 8. SAVE THE CUSTOM FIELD DATA
 // -----------------------------------------------------------------------------
-add_action( 'save_post', 'sdp_save_meta_box' );
-function sdp_save_meta_box( $post_id ) {
-	if ( ! isset( $_POST['sdp_meta_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['sdp_meta_nonce'] ) ), 'sdp_save_meta' ) ) return;
+add_action( 'save_post', 'demodeck_save_meta_box' );
+function demodeck_save_meta_box( $post_id ) {
+	if ( ! isset( $_POST['demodeck_meta_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['demodeck_meta_nonce'] ) ), 'demodeck_save_meta' ) ) return;
 	if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) return;
 	if ( ! current_user_can( 'edit_post', $post_id ) ) return;
 
-	if ( isset( $_POST['sdp_demo_url'] ) ) {
-		update_post_meta( $post_id, '_sdp_demo_url', esc_url_raw( wp_unslash( $_POST['sdp_demo_url'] ) ) );
+	if ( isset( $_POST['demodeck_demo_url'] ) ) {
+		update_post_meta( $post_id, '_demodeck_demo_url', esc_url_raw( wp_unslash( $_POST['demodeck_demo_url'] ) ) );
 	}
 }
 
 // -----------------------------------------------------------------------------
 // 9. OVERRIDE THE PAGE TEMPLATE TO SHOW THE FULLSCREEN IFRAME
 // -----------------------------------------------------------------------------
-add_action( 'template_redirect', 'sdp_render_preview_page' );
-function sdp_render_preview_page() {
+add_action( 'template_redirect', 'demodeck_render_preview_page' );
+function demodeck_render_preview_page() {
 	if ( is_singular( 'demo_site' ) ) {
 		$post_id = get_the_ID();
 		$title = get_the_title();
-		$demo_url = get_post_meta( $post_id, '_sdp_demo_url', true );
+		$demo_url = get_post_meta( $post_id, '_demodeck_demo_url', true );
 		if ( empty( $demo_url ) ) { $demo_url = home_url(); }
 		$close_url = home_url( '/example-sites/' );
 
 		$all_demos = get_posts( array( 'post_type' => 'demo_site', 'posts_per_page' => -1, 'post_status' => 'publish', 'orderby' => 'menu_order title', 'order' => 'ASC' ) );
 		$site_name = get_bloginfo( 'name' );
 
-		$topbar_bg = get_option( 'sdp_topbar_bg', '#ffffff' );
-		$topbar_text = get_option( 'sdp_topbar_text', '#333333' );
-		$disable_seo = get_option( 'sdp_disable_seo', 'yes' );
+		$topbar_bg = get_option( 'demodeck_topbar_bg', '#ffffff' );
+		$topbar_text = get_option( 'demodeck_topbar_text', '#333333' );
+		$disable_seo = get_option( 'demodeck_disable_seo', 'yes' );
 
 		// 1. Get all categories and sort them by our custom "Display Order" number
 		$terms = get_terms( array( 'taxonomy' => 'demo_type', 'hide_empty' => false ) );
@@ -469,7 +529,7 @@ function sdp_render_preview_page() {
 			<div id="stp-previewer-wrapper">
 				<div class="stp-topbar">
 					<div class="stp-title">
-						<select id="stp-demo-selector" class="stp-demo-dropdown">
+						<select id="stp-demo-selector" class="stp-demo-dropdown" aria-label="<?php esc_attr_e( 'Choose a demo site to preview', 'demodeck' ); ?>">
 							<?php foreach ( $grouped_demos as $group_name => $demos ) : ?>
 								<optgroup label="<?php echo esc_attr( $group_name ); ?>">
 									<?php foreach ( $demos as $demo ) : ?>
@@ -482,12 +542,12 @@ function sdp_render_preview_page() {
 						</select>
 					</div>
 					<div class="stp-device-toggles">
-						<button class="stp-btn active" data-width="100%"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg></button>
-						<button class="stp-btn" data-width="768px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg></button>
-						<button class="stp-btn" data-width="375px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg></button>
+						<button type="button" class="stp-btn active" data-width="100%" aria-label="<?php esc_attr_e( 'Desktop view', 'demodeck' ); ?>"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg></button>
+						<button type="button" class="stp-btn" data-width="768px" aria-label="<?php esc_attr_e( 'Tablet view', 'demodeck' ); ?>"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg></button>
+						<button type="button" class="stp-btn" data-width="375px" aria-label="<?php esc_attr_e( 'Mobile view', 'demodeck' ); ?>"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg></button>
 					</div>
 					<div class="stp-close">
-						<a href="<?php echo esc_url( $close_url ); ?>"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></a>
+						<a href="<?php echo esc_url( $close_url ); ?>" aria-label="<?php esc_attr_e( 'Close preview and return to all sites', 'demodeck' ); ?>"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></a>
 					</div>
 				</div>
 				<div class="stp-iframe-container">
@@ -520,16 +580,16 @@ function sdp_render_preview_page() {
 // -----------------------------------------------------------------------------
 // 10. CLEAN UP ADMIN INTERFACE (CONDITIONALLY REMOVE HEAVY SEO META BOXES)
 // -----------------------------------------------------------------------------
-add_action( 'add_meta_boxes', 'sdp_remove_seo_meta_boxes', 99 );
-function sdp_remove_seo_meta_boxes() {
-	if ( get_option( 'sdp_disable_seo', 'yes' ) === 'yes' ) {
+add_action( 'add_meta_boxes', 'demodeck_remove_seo_meta_boxes', 99 );
+function demodeck_remove_seo_meta_boxes() {
+	if ( get_option( 'demodeck_disable_seo', 'yes' ) === 'yes' ) {
 		remove_meta_box( 'wpseo_meta', 'demo_site', 'normal' ); // Yoast
 		remove_meta_box( 'aiosp', 'demo_site', 'normal' ); // AIOSEO
 	}
 }
 
 add_filter( 'rank_math/excluded_post_types', function( $post_types ) {
-	if ( get_option( 'sdp_disable_seo', 'yes' ) === 'yes' ) {
+	if ( get_option( 'demodeck_disable_seo', 'yes' ) === 'yes' ) {
 		$post_types['demo_site'] = 'demo_site';
 	}
 	return $post_types;
@@ -538,8 +598,8 @@ add_filter( 'rank_math/excluded_post_types', function( $post_types ) {
 // -----------------------------------------------------------------------------
 // 11. CREATE THE BEAUTIFUL "HUB" SHORTCODE (UPDATED FOR CATEGORIES)
 // -----------------------------------------------------------------------------
-add_shortcode( 'demo_sites_hub', 'sdp_hub_shortcode' );
-function sdp_hub_shortcode( $atts ) {
+add_shortcode( 'demo_sites_hub', 'demodeck_hub_shortcode' );
+function demodeck_hub_shortcode( $atts ) {
 	// Allow filtering by category slug via shortcode attribute
 	$atts = shortcode_atts( array(
 		'category' => '', 
@@ -570,8 +630,8 @@ function sdp_hub_shortcode( $atts ) {
 		return '<p>' . esc_html__( 'No demo sites found for this category.', 'demodeck' ) . '</p>';
 	}
 
-	$button_bg = get_option( 'sdp_button_bg', '#2563eb' );
-	$button_text = get_option( 'sdp_button_text', '#ffffff' );
+	$button_bg = get_option( 'demodeck_button_bg', '#2563eb' );
+	$button_text = get_option( 'demodeck_button_text', '#ffffff' );
 
 	ob_start();
 	?>
@@ -609,8 +669,8 @@ function sdp_hub_shortcode( $atts ) {
 // -----------------------------------------------------------------------------
 // 12. ADD SETTINGS LINK TO PLUGINS PAGE
 // -----------------------------------------------------------------------------
-add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), 'sdp_add_settings_link' );
-function sdp_add_settings_link( $links ) {
+add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), 'demodeck_add_settings_link' );
+function demodeck_add_settings_link( $links ) {
 	$settings_link = '<a href="' . admin_url( 'edit.php?post_type=demo_site&page=sdp-hub-setup' ) . '">' . __( 'Settings', 'demodeck' ) . '</a>';
 	array_unshift( $links, $settings_link );
 	return $links;
@@ -619,8 +679,8 @@ function sdp_add_settings_link( $links ) {
 // -----------------------------------------------------------------------------
 // 13. AUTO-ASSIGN MENU ORDER TO NEW POSTS (SAFELY)
 // -----------------------------------------------------------------------------
-add_filter( 'wp_insert_post_data', 'sdp_auto_set_menu_order_on_create', 10, 2 );
-function sdp_auto_set_menu_order_on_create( $data, $postarr ) {
+add_filter( 'wp_insert_post_data', 'demodeck_auto_set_menu_order_on_create', 10, 2 );
+function demodeck_auto_set_menu_order_on_create( $data, $postarr ) {
 	if ( $data['post_type'] === 'demo_site' && $data['menu_order'] == 0 ) {
 		$is_new_post = false;
 
@@ -646,8 +706,8 @@ function sdp_auto_set_menu_order_on_create( $data, $postarr ) {
 // -----------------------------------------------------------------------------
 // 14. ADD & POPULATE THE "ORDER" COLUMN IN THE ADMIN LIST
 // -----------------------------------------------------------------------------
-add_filter( 'manage_demo_site_posts_columns', 'sdp_add_order_column' );
-function sdp_add_order_column( $columns ) {
+add_filter( 'manage_demo_site_posts_columns', 'demodeck_add_order_column' );
+function demodeck_add_order_column( $columns ) {
 	$new_columns = array();
 	foreach ( $columns as $key => $title ) {
 		$new_columns[$key] = $title;
@@ -658,15 +718,15 @@ function sdp_add_order_column( $columns ) {
 	return $new_columns;
 }
 
-add_action( 'manage_demo_site_posts_custom_column', 'sdp_fill_order_column', 10, 2 );
-function sdp_fill_order_column( $column, $post_id ) {
+add_action( 'manage_demo_site_posts_custom_column', 'demodeck_fill_order_column', 10, 2 );
+function demodeck_fill_order_column( $column, $post_id ) {
 	if ( $column === 'menu_order' ) {
 		echo esc_html( get_post( $post_id )->menu_order );
 	}
 }
 
-add_filter( 'manage_edit-demo_site_sortable_columns', 'sdp_make_order_column_sortable' );
-function sdp_make_order_column_sortable( $columns ) {
+add_filter( 'manage_edit-demo_site_sortable_columns', 'demodeck_make_order_column_sortable' );
+function demodeck_make_order_column_sortable( $columns ) {
 	$columns['menu_order'] = 'menu_order';
 	return $columns;
 }
@@ -674,8 +734,8 @@ function sdp_make_order_column_sortable( $columns ) {
 // -----------------------------------------------------------------------------
 // 15. DEFAULT THE ADMIN LIST TO SORT BY MENU ORDER
 // -----------------------------------------------------------------------------
-add_action( 'pre_get_posts', 'sdp_default_admin_sort_order' );
-function sdp_default_admin_sort_order( $query ) {
+add_action( 'pre_get_posts', 'demodeck_default_admin_sort_order' );
+function demodeck_default_admin_sort_order( $query ) {
 	if ( is_admin() && $query->is_main_query() && $query->get( 'post_type' ) === 'demo_site' ) {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		if ( ! isset( $_GET['orderby'] ) ) {
@@ -688,16 +748,16 @@ function sdp_default_admin_sort_order( $query ) {
 // -----------------------------------------------------------------------------
 // 16. ENABLE DRAG-AND-DROP SORTING
 // -----------------------------------------------------------------------------
-add_action( 'admin_enqueue_scripts', 'sdp_enqueue_sortable_script' );
-function sdp_enqueue_sortable_script( $hook ) {
+add_action( 'admin_enqueue_scripts', 'demodeck_enqueue_sortable_script' );
+function demodeck_enqueue_sortable_script( $hook ) {
 	global $post_type;
 	if ( $hook === 'edit.php' && $post_type === 'demo_site' ) {
 		wp_enqueue_script( 'jquery-ui-sortable' );
 	}
 }
 
-add_action( 'admin_footer-edit.php', 'sdp_sortable_js' );
-function sdp_sortable_js() {
+add_action( 'admin_footer-edit.php', 'demodeck_sortable_js' );
+function demodeck_sortable_js() {
 	global $post_type;
 	if ( $post_type !== 'demo_site' ) return;
 	?>
@@ -723,9 +783,9 @@ function sdp_sortable_js() {
 					url: ajaxurl,
 					type: 'POST',
 					data: {
-						action: 'sdp_update_post_order',
+						action: 'demodeck_update_post_order',
 						order: sortedIDs,
-						security: '<?php echo esc_html( wp_create_nonce("sdp_sort_nonce") ); ?>'
+						security: '<?php echo esc_html( wp_create_nonce("demodeck_sort_nonce") ); ?>'
 					},
 					success: function() {
 						$('#the-list tr').css('transition', 'background-color 0.5s').css('background-color', '#f0f6fc');
@@ -744,25 +804,33 @@ function sdp_sortable_js() {
 	<?php
 }
 
-add_action( 'wp_ajax_sdp_update_post_order', 'sdp_save_drag_drop_order' );
-function sdp_save_drag_drop_order() {
-	check_ajax_referer( 'sdp_sort_nonce', 'security' );
+add_action( 'wp_ajax_demodeck_update_post_order', 'demodeck_save_drag_drop_order' );
+function demodeck_save_drag_drop_order() {
+	check_ajax_referer( 'demodeck_sort_nonce', 'security' );
 	if ( ! current_user_can( 'edit_posts' ) ) wp_die( 'Permission denied' );
 
 	if ( isset( $_POST['order'] ) && is_array( $_POST['order'] ) ) {
-		
+
 		// Sanitize the array of IDs by ensuring they are all unslashed positive integers
 		$sanitized_order = array_map( 'absint', wp_unslash( $_POST['order'] ) );
-		
+
 		global $wpdb;
 		foreach ( $sanitized_order as $index => $post_id ) {
+			if ( ! $post_id ) {
+				continue;
+			}
+			// Only ever reorder our own post type, and only posts this user is
+			// allowed to edit, so a forged ID can't touch unrelated content.
+			if ( 'demo_site' !== get_post_type( $post_id ) || ! current_user_can( 'edit_post', $post_id ) ) {
+				continue;
+			}
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
-			$wpdb->update( 
-				$wpdb->posts, 
-				array( 'menu_order' => $index + 1 ), 
-				array( 'ID' => $post_id ),
+			$wpdb->update(
+				$wpdb->posts,
+				array( 'menu_order' => $index + 1 ),
+				array( 'ID' => $post_id, 'post_type' => 'demo_site' ),
 				array( '%d' ),
-				array( '%d' )
+				array( '%d', '%s' )
 			);
 			clean_post_cache( $post_id );
 		}
