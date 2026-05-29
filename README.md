@@ -1,4 +1,4 @@
-# Simple Demo Previewer
+# DemoDeck
 
 **Contributors:** rsmith4321, Shoreline Web Designs  
 **Tags:** demo previewer, theme directory, iframe preview, portfolio, showcase  
@@ -12,7 +12,7 @@ Automatically generates a beautiful, full-screen, responsive iframe previewer an
 
 ## Description
 
-Simple Demo Previewer is the ultimate tool for web designers, agencies, and theme developers who want to showcase their work professionally. It automatically generates a beautiful, full-screen, responsive iframe previewer so clients can test your sites on desktop, tablet, and mobile views.
+DemoDeck is the ultimate tool for web designers, agencies, and theme developers who want to showcase their work professionally. It automatically generates a beautiful, full-screen, responsive iframe previewer so clients can test your sites on desktop, tablet, and mobile views.
 
 The plugin also generates a beautiful, centralized "Hub" grid page to display all your available demos in one place.
 
@@ -28,7 +28,7 @@ The plugin also generates a beautiful, centralized "Hub" grid page to display al
 
 ## Installation
 
-1. Upload the `simple-demo-previewer` folder to the `/wp-content/plugins/` directory, or install it directly through the WordPress plugins screen.
+1. Upload the `demodeck` folder to the `/wp-content/plugins/` directory, or install it directly through the WordPress plugins screen.
 2. Activate the plugin through the 'Plugins' screen in WordPress.
 3. Upon activation, a new "Example Sites" page will be automatically generated for you.
 4. Navigate to **Demo Sites > Getting Started** in your WordPress dashboard to configure your brand colors and view the setup instructions.

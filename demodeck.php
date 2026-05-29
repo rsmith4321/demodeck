@@ -1,12 +1,12 @@
 <?php
 /**
- * Plugin Name: Simple Demo Previewer
- * Plugin URI: https://github.com/rsmith4321/simple-demo-previewer
+ * Plugin Name: DemoDeck
+ * Plugin URI: https://github.com/rsmith4321/demodeck
  * Description: Automatically generates a beautiful, full-screen, responsive iframe previewer and a central hub page to show off your website themes. Includes drag-and-drop ordering.
  * Version: 2.1
  * Author: Shoreline Web Designs
  * Author URI: https://shorelinewebdesigns.com/
- * Text Domain: simple-demo-previewer
+ * Text Domain: demodeck
  * License: GPLv2 or later
  */
 
@@ -58,15 +58,15 @@ add_action( 'init', 'sdp_register_cpt' );
 function sdp_register_cpt() {
 	register_post_type( 'demo_site', array(
 		'labels' => array(
-			'name'                  => __( 'Demo Sites', 'simple-demo-previewer' ),
-			'singular_name'         => __( 'Demo Site', 'simple-demo-previewer' ),
-			'add_new_item'          => __( 'Add New Demo Site', 'simple-demo-previewer' ),
-			'edit_item'             => __( 'Edit Demo Site', 'simple-demo-previewer' ),
-			'all_items'             => __( 'All Demo Sites', 'simple-demo-previewer' ),
-			'featured_image'        => __( 'Website Thumbnail', 'simple-demo-previewer' ),
-			'set_featured_image'    => __( 'Set Website Thumbnail', 'simple-demo-previewer' ),
-			'remove_featured_image' => __( 'Remove Website Thumbnail', 'simple-demo-previewer' ),
-			'use_featured_image'    => __( 'Use as Website Thumbnail', 'simple-demo-previewer' ),
+			'name'                  => __( 'Demo Sites', 'demodeck' ),
+			'singular_name'         => __( 'Demo Site', 'demodeck' ),
+			'add_new_item'          => __( 'Add New Demo Site', 'demodeck' ),
+			'edit_item'             => __( 'Edit Demo Site', 'demodeck' ),
+			'all_items'             => __( 'All Demo Sites', 'demodeck' ),
+			'featured_image'        => __( 'Website Thumbnail', 'demodeck' ),
+			'set_featured_image'    => __( 'Set Website Thumbnail', 'demodeck' ),
+			'remove_featured_image' => __( 'Remove Website Thumbnail', 'demodeck' ),
+			'use_featured_image'    => __( 'Use as Website Thumbnail', 'demodeck' ),
 		),
 		'public'      => true,
 		'has_archive' => true,
@@ -82,10 +82,10 @@ add_action( 'init', 'sdp_register_taxonomy' );
 function sdp_register_taxonomy() {
 	register_taxonomy( 'demo_type', array( 'demo_site' ), array(
 		'labels' => array(
-			'name'              => __( 'Categories', 'simple-demo-previewer' ),
-			'singular_name'     => __( 'Category', 'simple-demo-previewer' ),
-			'menu_name'         => __( 'Categories', 'simple-demo-previewer' ),
-			'add_new_item'      => __( 'Add New Category', 'simple-demo-previewer' ),
+			'name'              => __( 'Categories', 'demodeck' ),
+			'singular_name'     => __( 'Category', 'demodeck' ),
+			'menu_name'         => __( 'Categories', 'demodeck' ),
+			'add_new_item'      => __( 'Add New Category', 'demodeck' ),
 		),
 		'hierarchical'      => true, // Acts like standard WordPress categories (checkboxes)
 		'show_ui'           => true,
@@ -102,9 +102,9 @@ add_action( 'demo_type_add_form_fields', 'sdp_add_category_order_field' );
 function sdp_add_category_order_field() {
 	?>
 	<div class="form-field">
-		<label for="term_order"><?php esc_html_e( 'Display Order', 'simple-demo-previewer' ); ?></label>
+		<label for="term_order"><?php esc_html_e( 'Display Order', 'demodeck' ); ?></label>
 		<input type="number" name="term_order" id="term_order" value="0" />
-		<p class="description"><?php esc_html_e( 'Enter a number to sort this category in the preview dropdown (e.g., 1 for first, 2 for second).', 'simple-demo-previewer' ); ?></p>
+		<p class="description"><?php esc_html_e( 'Enter a number to sort this category in the preview dropdown (e.g., 1 for first, 2 for second).', 'demodeck' ); ?></p>
 	</div>
 	<?php
 }
@@ -116,10 +116,10 @@ function sdp_edit_category_order_field( $term ) {
 	if ( $order === '' ) { $order = 0; }
 	?>
 	<tr class="form-field">
-		<th scope="row" valign="top"><label for="term_order"><?php esc_html_e( 'Display Order', 'simple-demo-previewer' ); ?></label></th>
+		<th scope="row" valign="top"><label for="term_order"><?php esc_html_e( 'Display Order', 'demodeck' ); ?></label></th>
 		<td>
 			<input type="number" name="term_order" id="term_order" value="<?php echo esc_attr( $order ); ?>" />
-			<p class="description"><?php esc_html_e( 'Enter a number to sort this category in the preview dropdown (e.g., 1 for first, 2 for second).', 'simple-demo-previewer' ); ?></p>
+			<p class="description"><?php esc_html_e( 'Enter a number to sort this category in the preview dropdown (e.g., 1 for first, 2 for second).', 'demodeck' ); ?></p>
 		</td>
 	</tr>
 	<?php
@@ -139,7 +139,7 @@ function sdp_save_category_order( $term_id ) {
 // 4. Add "Order" column to the Categories list table
 add_filter( 'manage_edit-demo_type_columns', 'sdp_add_category_order_column' );
 function sdp_add_category_order_column( $columns ) {
-	$columns['term_order'] = __( 'Order', 'simple-demo-previewer' );
+	$columns['term_order'] = __( 'Order', 'demodeck' );
 	return $columns;
 }
 
@@ -159,8 +159,8 @@ add_action( 'admin_menu', 'sdp_add_admin_menu' );
 function sdp_add_admin_menu() {
 	add_submenu_page(
 		'edit.php?post_type=demo_site',
-		__( 'Getting Started', 'simple-demo-previewer' ),
-		__( 'Getting Started', 'simple-demo-previewer' ),
+		__( 'Getting Started', 'demodeck' ),
+		__( 'Getting Started', 'demodeck' ),
 		'manage_options',
 		'sdp-hub-setup',
 		'sdp_hub_setup_page_html'
@@ -177,9 +177,9 @@ function sdp_hub_setup_page_html() {
 	if ( isset( $_POST['sdp_generate_hub'] ) && check_admin_referer( 'sdp_generate_hub_action', 'sdp_generate_hub_nonce' ) ) {
 		$result = sdp_create_hub_page();
 		if ( $result ) {
-			echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Success! The "Example Sites" hub page has been generated.', 'simple-demo-previewer' ) . ' <a href="' . esc_url( get_edit_post_link( $result ) ) . '">' . esc_html__( 'View Page', 'simple-demo-previewer' ) . '</a></p></div>';
+			echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Success! The "Example Sites" hub page has been generated.', 'demodeck' ) . ' <a href="' . esc_url( get_edit_post_link( $result ) ) . '">' . esc_html__( 'View Page', 'demodeck' ) . '</a></p></div>';
 		} else {
-			echo '<div class="notice notice-info is-dismissible"><p>' . esc_html__( 'The "Example Sites" page already exists. No new page was created. Check your Pages menu or your Trash.', 'simple-demo-previewer' ) . '</p></div>';
+			echo '<div class="notice notice-info is-dismissible"><p>' . esc_html__( 'The "Example Sites" page already exists. No new page was created. Check your Pages menu or your Trash.', 'demodeck' ) . '</p></div>';
 		}
 	}
 
@@ -193,64 +193,64 @@ function sdp_hub_setup_page_html() {
 		if ( isset( $_POST['sdp_button_bg'] ) ) update_option( 'sdp_button_bg', sanitize_hex_color( wp_unslash( $_POST['sdp_button_bg'] ) ) );
 		if ( isset( $_POST['sdp_button_text'] ) ) update_option( 'sdp_button_text', sanitize_hex_color( wp_unslash( $_POST['sdp_button_text'] ) ) );
 		
-		echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Settings saved successfully!', 'simple-demo-previewer' ) . '</p></div>';
+		echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Settings saved successfully!', 'demodeck' ) . '</p></div>';
 	}
 	
 	?>
 	<div class="wrap">
-		<h1><?php esc_html_e( 'Simple Demo Previewer - Getting Started', 'simple-demo-previewer' ); ?></h1>
-		<p class="about-description"><?php esc_html_e( 'Welcome to Simple Demo Previewer! Follow the steps below to set up your professional theme directory and full-screen preview app.', 'simple-demo-previewer' ); ?></p>
+		<h1><?php esc_html_e( 'DemoDeck - Getting Started', 'demodeck' ); ?></h1>
+		<p class="about-description"><?php esc_html_e( 'Welcome to DemoDeck! Follow the steps below to set up your professional theme directory and full-screen preview app.', 'demodeck' ); ?></p>
 		
 		<div id="poststuff">
 			<div id="post-body" class="metabox-holder columns-2">
 				
 				<div id="post-body-content">
 					<div class="postbox">
-						<h2 class="hndle" style="padding: 15px;"><span><?php esc_html_e( '📖 How to Create Your Demo Directory', 'simple-demo-previewer' ); ?></span></h2>
+						<h2 class="hndle" style="padding: 15px;"><span><?php esc_html_e( '📖 How to Create Your Demo Directory', 'demodeck' ); ?></span></h2>
 						<div class="inside" style="padding: 0 15px 15px;">
 							
-							<h3><?php esc_html_e( '1. Add & Categorize Your Demo Sites', 'simple-demo-previewer' ); ?></h3>
-							<p><?php esc_html_e( 'Navigate to ', 'simple-demo-previewer' ); ?><strong><?php esc_html_e( 'Demo Sites > Add New Demo Site', 'simple-demo-previewer' ); ?></strong>.</p>
+							<h3><?php esc_html_e( '1. Add & Categorize Your Demo Sites', 'demodeck' ); ?></h3>
+							<p><?php esc_html_e( 'Navigate to ', 'demodeck' ); ?><strong><?php esc_html_e( 'Demo Sites > Add New Demo Site', 'demodeck' ); ?></strong>.</p>
 							<ul style="list-style-type: disc; margin-left: 20px;">
-								<li><strong><?php esc_html_e( 'Title:', 'simple-demo-previewer' ); ?></strong> <?php esc_html_e( 'Enter the name of your template or project.', 'simple-demo-previewer' ); ?></li>
-								<li><strong><?php esc_html_e( 'URL:', 'simple-demo-previewer' ); ?></strong> <?php esc_html_e( 'Scroll down to the "Demo Site Settings" box and paste the live URL of the site you want to display in the previewer.', 'simple-demo-previewer' ); ?></li>
-								<li><strong><?php esc_html_e( 'Category:', 'simple-demo-previewer' ); ?></strong> <?php esc_html_e( 'Use the Categories box on the right sidebar to separate your "Real Sites" from your "Templates".', 'simple-demo-previewer' ); ?></li>
+								<li><strong><?php esc_html_e( 'Title:', 'demodeck' ); ?></strong> <?php esc_html_e( 'Enter the name of your template or project.', 'demodeck' ); ?></li>
+								<li><strong><?php esc_html_e( 'URL:', 'demodeck' ); ?></strong> <?php esc_html_e( 'Scroll down to the "Demo Site Settings" box and paste the live URL of the site you want to display in the previewer.', 'demodeck' ); ?></li>
+								<li><strong><?php esc_html_e( 'Category:', 'demodeck' ); ?></strong> <?php esc_html_e( 'Use the Categories box on the right sidebar to separate your "Real Sites" from your "Templates".', 'demodeck' ); ?></li>
 							</ul>
 
 							<hr style="margin: 20px 0;">
 
-							<h3><?php esc_html_e( '2. Add Beautiful Thumbnails', 'simple-demo-previewer' ); ?></h3>
-							<p><?php esc_html_e( 'To make your directory grid look professional, upload a screenshot of your site layout.', 'simple-demo-previewer' ); ?></p>
+							<h3><?php esc_html_e( '2. Add Beautiful Thumbnails', 'demodeck' ); ?></h3>
+							<p><?php esc_html_e( 'To make your directory grid look professional, upload a screenshot of your site layout.', 'demodeck' ); ?></p>
 							<ul style="list-style-type: disc; margin-left: 20px;">
-								<li><?php esc_html_e( 'While editing a Demo Site, look right below the URL setting for the ', 'simple-demo-previewer' ); ?><strong><?php esc_html_e( 'Website Thumbnail', 'simple-demo-previewer' ); ?></strong> <?php esc_html_e( 'box.', 'simple-demo-previewer' ); ?></li>
-								<li><?php esc_html_e( 'Upload a high-quality image in the website thumbnail section. The plugin will automatically crop and optimize it to a perfect 16:9 ratio for your grid cards.', 'simple-demo-previewer' ); ?></li>
+								<li><?php esc_html_e( 'While editing a Demo Site, look right below the URL setting for the ', 'demodeck' ); ?><strong><?php esc_html_e( 'Website Thumbnail', 'demodeck' ); ?></strong> <?php esc_html_e( 'box.', 'demodeck' ); ?></li>
+								<li><?php esc_html_e( 'Upload a high-quality image in the website thumbnail section. The plugin will automatically crop and optimize it to a perfect 16:9 ratio for your grid cards.', 'demodeck' ); ?></li>
 							</ul>
 
 							<hr style="margin: 20px 0;">
 
-							<h3><?php esc_html_e( '3. Display Your Hub Pages', 'simple-demo-previewer' ); ?></h3>
-							<p><?php esc_html_e( 'The plugin automatically generated a page called ', 'simple-demo-previewer' ); ?><strong><?php esc_html_e( '"Example Sites"', 'simple-demo-previewer' ); ?></strong> <?php esc_html_e( 'upon activation. You can find this in your standard WordPress Pages menu.', 'simple-demo-previewer' ); ?></p>
+							<h3><?php esc_html_e( '3. Display Your Hub Pages', 'demodeck' ); ?></h3>
+							<p><?php esc_html_e( 'The plugin automatically generated a page called ', 'demodeck' ); ?><strong><?php esc_html_e( '"Example Sites"', 'demodeck' ); ?></strong> <?php esc_html_e( 'upon activation. You can find this in your standard WordPress Pages menu.', 'demodeck' ); ?></p>
 							
-							<p><strong><?php esc_html_e( 'Show All Sites:', 'simple-demo-previewer' ); ?></strong><br>
-							<?php esc_html_e( 'To display your entire directory, use the standard shortcode:', 'simple-demo-previewer' ); ?></p>
+							<p><strong><?php esc_html_e( 'Show All Sites:', 'demodeck' ); ?></strong><br>
+							<?php esc_html_e( 'To display your entire directory, use the standard shortcode:', 'demodeck' ); ?></p>
 							<p><code style="font-size: 16px; padding: 5px 10px; display: inline-block;">[demo_sites_hub]</code></p>
 							
-							<p style="margin-top: 15px;"><strong><?php esc_html_e( 'Filter By Category:', 'simple-demo-previewer' ); ?></strong><br>
-							<?php esc_html_e( 'To separate your grids, you can use the shortcode with a category slug. For example, to show only your "Real Sites" category:', 'simple-demo-previewer' ); ?></p>
+							<p style="margin-top: 15px;"><strong><?php esc_html_e( 'Filter By Category:', 'demodeck' ); ?></strong><br>
+							<?php esc_html_e( 'To separate your grids, you can use the shortcode with a category slug. For example, to show only your "Real Sites" category:', 'demodeck' ); ?></p>
 							<p><code style="font-size: 16px; padding: 5px 10px; display: inline-block;">[demo_sites_hub category="real-sites"]</code></p>
 							
 							<hr style="margin: 20px 0;">
 							
-							<h3><?php esc_html_e( '4. Custom Sorting (Drag and Drop)', 'simple-demo-previewer' ); ?></h3>
-							<p><?php esc_html_e( 'To change the order of your sites, simply go to your "All Demo Sites" page, click on any row, and drag it up or down. The order saves automatically and matches your live grid exactly.', 'simple-demo-previewer' ); ?></p>
+							<h3><?php esc_html_e( '4. Custom Sorting (Drag and Drop)', 'demodeck' ); ?></h3>
+							<p><?php esc_html_e( 'To change the order of your sites, simply go to your "All Demo Sites" page, click on any row, and drag it up or down. The order saves automatically and matches your live grid exactly.', 'demodeck' ); ?></p>
 
 							<hr style="margin: 20px 0;">
 
-							<h3><?php esc_html_e( '5. SEO Best Practices', 'simple-demo-previewer' ); ?></h3>
-							<p><?php esc_html_e( 'By default, this plugin hides the SEO meta boxes on Demo Sites and adds a "noindex" tag. Why?', 'simple-demo-previewer' ); ?></p>
+							<h3><?php esc_html_e( '5. SEO Best Practices', 'demodeck' ); ?></h3>
+							<p><?php esc_html_e( 'By default, this plugin hides the SEO meta boxes on Demo Sites and adds a "noindex" tag. Why?', 'demodeck' ); ?></p>
 							<ul style="list-style-type: disc; margin-left: 20px;">
-								<li><?php esc_html_e( 'Since the previewer loads your actual websites inside an iframe, allowing search engines to index these preview pages can cause ', 'simple-demo-previewer' ); ?><strong><?php esc_html_e( 'duplicate content', 'simple-demo-previewer' ); ?></strong><?php esc_html_e( ' penalties against your main sites.', 'simple-demo-previewer' ); ?></li>
-								<li><?php esc_html_e( 'Keeping them hidden ensures all SEO value stays where it belongs: on your actual live sites. You can toggle this off in the Plugin Settings if needed.', 'simple-demo-previewer' ); ?></li>
+								<li><?php esc_html_e( 'Since the previewer loads your actual websites inside an iframe, allowing search engines to index these preview pages can cause ', 'demodeck' ); ?><strong><?php esc_html_e( 'duplicate content', 'demodeck' ); ?></strong><?php esc_html_e( ' penalties against your main sites.', 'demodeck' ); ?></li>
+								<li><?php esc_html_e( 'Keeping them hidden ensures all SEO value stays where it belongs: on your actual live sites. You can toggle this off in the Plugin Settings if needed.', 'demodeck' ); ?></li>
 							</ul>
 						</div>
 					</div>
@@ -259,64 +259,64 @@ function sdp_hub_setup_page_html() {
 				<div id="postbox-container-1" class="postbox-container">
 					
 					<div class="postbox">
-						<h2 class="hndle" style="padding: 15px;"><span><?php esc_html_e( '⚙️ Plugin Settings', 'simple-demo-previewer' ); ?></span></h2>
+						<h2 class="hndle" style="padding: 15px;"><span><?php esc_html_e( '⚙️ Plugin Settings', 'demodeck' ); ?></span></h2>
 						<div class="inside" style="padding: 0 15px 15px;">
 							<form method="post" action="">
 								<?php wp_nonce_field( 'sdp_save_settings_action', 'sdp_save_settings_nonce' ); ?>
 								<input type="hidden" name="sdp_save_settings" value="1">
 								
-								<p style="margin-top:0;"><strong><?php esc_html_e( 'SEO Preferences', 'simple-demo-previewer' ); ?></strong></p>
+								<p style="margin-top:0;"><strong><?php esc_html_e( 'SEO Preferences', 'demodeck' ); ?></strong></p>
 								<label style="display: block; margin-bottom: 20px;">
 									<input type="checkbox" name="sdp_disable_seo" value="yes" <?php checked( get_option( 'sdp_disable_seo', 'yes' ), 'yes' ); ?> />
-									<?php esc_html_e( 'Disable SEO plugins and No Index Demo Pages', 'simple-demo-previewer' ); ?>
+									<?php esc_html_e( 'Disable SEO plugins and No Index Demo Pages', 'demodeck' ); ?>
 								</label>
 
 								<hr style="margin: 20px 0;">
 								
-								<p style="margin-top:0;"><strong><?php esc_html_e( 'Previewer Top Bar', 'simple-demo-previewer' ); ?></strong></p>
+								<p style="margin-top:0;"><strong><?php esc_html_e( 'Previewer Top Bar', 'demodeck' ); ?></strong></p>
 								<div style="display: flex; align-items: center; margin-bottom: 10px;">
 									<input type="color" id="sdp_topbar_bg" name="sdp_topbar_bg" value="<?php echo esc_attr( get_option( 'sdp_topbar_bg', '#ffffff' ) ); ?>" style="margin-right: 10px;" />
-									<label for="sdp_topbar_bg"><?php esc_html_e( 'Background Color', 'simple-demo-previewer' ); ?></label>
+									<label for="sdp_topbar_bg"><?php esc_html_e( 'Background Color', 'demodeck' ); ?></label>
 								</div>
 								<div style="display: flex; align-items: center; margin-bottom: 20px;">
 									<input type="color" id="sdp_topbar_text" name="sdp_topbar_text" value="<?php echo esc_attr( get_option( 'sdp_topbar_text', '#333333' ) ); ?>" style="margin-right: 10px;" />
-									<label for="sdp_topbar_text"><?php esc_html_e( 'Icon & Text Color', 'simple-demo-previewer' ); ?></label>
+									<label for="sdp_topbar_text"><?php esc_html_e( 'Icon & Text Color', 'demodeck' ); ?></label>
 								</div>
 
-								<p><strong><?php esc_html_e( 'Grid Buttons', 'simple-demo-previewer' ); ?></strong></p>
+								<p><strong><?php esc_html_e( 'Grid Buttons', 'demodeck' ); ?></strong></p>
 								<div style="display: flex; align-items: center; margin-bottom: 10px;">
 									<input type="color" id="sdp_button_bg" name="sdp_button_bg" value="<?php echo esc_attr( get_option( 'sdp_button_bg', '#2563eb' ) ); ?>" style="margin-right: 10px;" />
-									<label for="sdp_button_bg"><?php esc_html_e( 'Button Color', 'simple-demo-previewer' ); ?></label>
+									<label for="sdp_button_bg"><?php esc_html_e( 'Button Color', 'demodeck' ); ?></label>
 								</div>
 								<div style="display: flex; align-items: center; margin-bottom: 20px;">
 									<input type="color" id="sdp_button_text" name="sdp_button_text" value="<?php echo esc_attr( get_option( 'sdp_button_text', '#ffffff' ) ); ?>" style="margin-right: 10px;" />
-									<label for="sdp_button_text"><?php esc_html_e( 'Button Text', 'simple-demo-previewer' ); ?></label>
+									<label for="sdp_button_text"><?php esc_html_e( 'Button Text', 'demodeck' ); ?></label>
 								</div>
 
-								<?php submit_button( __( 'Save Settings', 'simple-demo-previewer' ), 'primary', 'submit', false ); ?>
+								<?php submit_button( __( 'Save Settings', 'demodeck' ), 'primary', 'submit', false ); ?>
 							</form>
 						</div>
 					</div>
 
 					<div class="postbox">
-						<h2 class="hndle" style="padding: 15px;"><span><?php esc_html_e( '🔄 Page Setup Tool', 'simple-demo-previewer' ); ?></span></h2>
+						<h2 class="hndle" style="padding: 15px;"><span><?php esc_html_e( '🔄 Page Setup Tool', 'demodeck' ); ?></span></h2>
 						<div class="inside" style="padding: 0 15px 15px;">
-							<p><?php esc_html_e( 'Did you accidentally delete your "Example Sites" directory page? Click the button below to instantly regenerate it with the correct shortcode.', 'simple-demo-previewer' ); ?></p>
+							<p><?php esc_html_e( 'Did you accidentally delete your "Example Sites" directory page? Click the button below to instantly regenerate it with the correct shortcode.', 'demodeck' ); ?></p>
 							<form method="post" action="">
 								<?php wp_nonce_field( 'sdp_generate_hub_action', 'sdp_generate_hub_nonce' ); ?>
 								<input type="hidden" name="sdp_generate_hub" value="1">
-								<?php submit_button( __( 'Generate "Example Sites" Page', 'simple-demo-previewer' ), 'secondary' ); ?>
+								<?php submit_button( __( 'Generate "Example Sites" Page', 'demodeck' ), 'secondary' ); ?>
 							</form>
 						</div>
 					</div>
 
 					<div class="postbox">
-						<h2 class="hndle" style="padding: 15px;"><span><?php esc_html_e( '👋 About the Developer', 'simple-demo-previewer' ); ?></span></h2>
+						<h2 class="hndle" style="padding: 15px;"><span><?php esc_html_e( '👋 About the Developer', 'demodeck' ); ?></span></h2>
 						<div class="inside" style="padding: 0 15px 15px;">
-							<p><?php esc_html_e( 'Simple Demo Previewer is proudly built and maintained by the team at Shoreline Web Designs. We specialize in high-performance web solutions and premium designs.', 'simple-demo-previewer' ); ?></p>
+							<p><?php esc_html_e( 'DemoDeck is proudly built and maintained by the team at Shoreline Web Designs. We specialize in high-performance web solutions and premium designs.', 'demodeck' ); ?></p>
 							<p>
 								<a href="https://shorelinewebdesigns.com/" target="_blank" class="button button-secondary" style="width: 100%; text-align: center;">
-									<?php esc_html_e( 'Visit Shoreline Web Designs', 'simple-demo-previewer' ); ?>
+									<?php esc_html_e( 'Visit Shoreline Web Designs', 'demodeck' ); ?>
 								</a>
 							</p>
 						</div>
@@ -337,7 +337,7 @@ function sdp_move_thumbnail_meta_box() {
 	// Remove it from the right sidebar
 	remove_meta_box( 'postimagediv', 'demo_site', 'side' );
 	// Add it to the main content area (normal) below the URL settings
-	add_meta_box( 'postimagediv', __( 'Website Thumbnail', 'simple-demo-previewer' ), 'post_thumbnail_meta_box', 'demo_site', 'normal', 'default' );
+	add_meta_box( 'postimagediv', __( 'Website Thumbnail', 'demodeck' ), 'post_thumbnail_meta_box', 'demo_site', 'normal', 'default' );
 }
 
 // -----------------------------------------------------------------------------
@@ -345,7 +345,7 @@ function sdp_move_thumbnail_meta_box() {
 // -----------------------------------------------------------------------------
 add_action( 'add_meta_boxes', 'sdp_add_meta_box' );
 function sdp_add_meta_box() {
-	add_meta_box( 'sdp_url_meta', __( 'Demo Site Settings', 'simple-demo-previewer' ), 'sdp_meta_box_html', 'demo_site', 'normal', 'high' );
+	add_meta_box( 'sdp_url_meta', __( 'Demo Site Settings', 'demodeck' ), 'sdp_meta_box_html', 'demo_site', 'normal', 'high' );
 }
 
 function sdp_meta_box_html( $post ) {
@@ -353,7 +353,7 @@ function sdp_meta_box_html( $post ) {
 	wp_nonce_field( 'sdp_save_meta', 'sdp_meta_nonce' );
 	?>
 	<p>
-		<label for="sdp_demo_url"><strong><?php esc_html_e( 'Demo Website URL:', 'simple-demo-previewer' ); ?></strong></label><br>
+		<label for="sdp_demo_url"><strong><?php esc_html_e( 'Demo Website URL:', 'demodeck' ); ?></strong></label><br>
 		<input type="url" id="sdp_demo_url" name="sdp_demo_url" value="<?php echo esc_url( $url ); ?>" style="width:100%; max-width: 600px; margin-top:5px;" placeholder="https://example.com/my-demo" required />
 	</p>
 	<?php
@@ -567,7 +567,7 @@ function sdp_hub_shortcode( $atts ) {
 	$demos = get_posts( $query_args );
 
 	if ( empty( $demos ) ) {
-		return '<p>' . esc_html__( 'No demo sites found for this category.', 'simple-demo-previewer' ) . '</p>';
+		return '<p>' . esc_html__( 'No demo sites found for this category.', 'demodeck' ) . '</p>';
 	}
 
 	$button_bg = get_option( 'sdp_button_bg', '#2563eb' );
@@ -587,7 +587,7 @@ function sdp_hub_shortcode( $atts ) {
 						</div>
 					<?php endif; ?>
 					<h3 class="sdp-demo-title"><?php echo esc_html( $demo->post_title ); ?></h3>
-					<a href="<?php echo esc_url( get_permalink( $demo->ID ) ); ?>" class="sdp-demo-btn"><?php esc_html_e( 'Launch Preview', 'simple-demo-previewer' ); ?></a>
+					<a href="<?php echo esc_url( get_permalink( $demo->ID ) ); ?>" class="sdp-demo-btn"><?php esc_html_e( 'Launch Preview', 'demodeck' ); ?></a>
 				</div>
 			<?php endforeach; ?>
 		</div>
@@ -611,7 +611,7 @@ function sdp_hub_shortcode( $atts ) {
 // -----------------------------------------------------------------------------
 add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), 'sdp_add_settings_link' );
 function sdp_add_settings_link( $links ) {
-	$settings_link = '<a href="' . admin_url( 'edit.php?post_type=demo_site&page=sdp-hub-setup' ) . '">' . __( 'Settings', 'simple-demo-previewer' ) . '</a>';
+	$settings_link = '<a href="' . admin_url( 'edit.php?post_type=demo_site&page=sdp-hub-setup' ) . '">' . __( 'Settings', 'demodeck' ) . '</a>';
 	array_unshift( $links, $settings_link );
 	return $links;
 }
@@ -652,7 +652,7 @@ function sdp_add_order_column( $columns ) {
 	foreach ( $columns as $key => $title ) {
 		$new_columns[$key] = $title;
 		if ( $key === 'title' ) {
-			$new_columns['menu_order'] = __( 'Order', 'simple-demo-previewer' );
+			$new_columns['menu_order'] = __( 'Order', 'demodeck' );
 		}
 	}
 	return $new_columns;
