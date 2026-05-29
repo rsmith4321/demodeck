@@ -3,7 +3,7 @@ Contributors: rsmith4321
 Tags: demo previewer, website demos, iframe preview, portfolio, showcase
 Requires at least: 5.0
 Tested up to: 7.0
-Stable tag: 2.2.0
+Stable tag: 2.2.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -58,6 +58,9 @@ Because your demo pages load your actual live websites inside an iframe, allowin
 4. Simple drag-and-drop admin sorting.
 
 == Changelog ==
+
+= 2.2.1 =
+* Compatibility: marked as tested up to WordPress 7.0.
 
 = 2.2.0 =
 * **Security:** The drag-and-drop reorder action now verifies that each submitted ID is a Demo Site the current user is allowed to edit, so it can never affect other content types.

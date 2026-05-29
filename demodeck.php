@@ -3,7 +3,7 @@
  * Plugin Name: DemoDeck
  * Plugin URI: https://github.com/rsmith4321/demodeck
  * Description: Automatically generates a beautiful, full-screen, responsive iframe previewer and a central hub page to show off your website themes. Includes drag-and-drop ordering.
- * Version: 2.2.0
+ * Version: 2.2.1
  * Author: Shoreline Web Designs
  * Author URI: https://shorelinewebdesigns.com/
  * Text Domain: demodeck
